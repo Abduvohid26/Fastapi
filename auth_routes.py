@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
-
+from sqlalchemy import or_
 auth_router = APIRouter(
     prefix='/auth',
 )
@@ -16,7 +16,14 @@ session = session(bind=engine)
 
 
 @auth_router.get('/')
-async def welcome():
+async def welcome(Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+    except AuthJWTException:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f'Invalid token'
+        )
     return {'message' :'This is page signup'}
 
 @auth_router.post('/signup/', status_code=status.HTTP_200_OK)
@@ -59,13 +66,29 @@ async def singup(user: SigupModel):
 
 @auth_router.post('/login/', status_code=status.HTTP_200_OK)
 async def login(user: LoginModel, Authorize: AuthJWT = Depends()):
-    db_username = session.query(User).filter(User.username == user.username).first()
-    if db_username and check_password_hash(db_username.password, user.password):
-        access_token = Authorize.create_access_token(subject=db_username.username)
-        refresh_token = Authorize.create_refresh_token(subject=db_username.username)
+    db_user = session.query(User).filter(
+        or_(
+            User.username == user.username_or_email,
+            User.email == user.username_or_email
+        )
+    ).first()
+    if db_user and check_password_hash(db_user.password, user.password):
+        access_token = Authorize.create_access_token(subject=db_user.username)
+        refresh_token = Authorize.create_refresh_token(subject=db_user.username)
         return {
             'code': 200,
             'access_token': access_token,
             'refresh_token': refresh_token
         }
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid username or password')
+
+
+@auth_router.post('/login/refresh/')
+async def refresh_token(Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_refresh_token_required()
+        current_user = Authorize.get_jwt_subject()
+        new_access_token = Authorize.create_access_token(subject=current_user)
+        return {"access_token": new_access_token}
+    except AuthJWTException:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
