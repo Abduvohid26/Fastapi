@@ -1,0 +1,11 @@
+
+email_validator==2.1.1
+fastapi==0.99.1
+fastapi-jwt-auth==0.5.0
+psycopg2-binary==2.9.9
+pydantic==1.10.11 
+python-dotenv==1.0.1
+SQLAlchemy==2.0.30
+SQLAlchemy-Utils==0.41.2
+uvicorn==0.29.0
+Werkzeug==3.0.3
