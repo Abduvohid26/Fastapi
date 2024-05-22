@@ -22,7 +22,7 @@ async def welcome(Authorize: AuthJWT = Depends()):
     except AuthJWTException:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f'Invalid token'
+            detail=f'Invalid tokens'
         )
     return {'message' :'This is page signup'}
 

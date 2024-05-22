@@ -28,6 +28,31 @@ class LoginModel(BaseModel):
 
 class SettingsModel(BaseModel):
     authjwt_secret_key: str = "a4555d491306130ada7f5036187736d331a30a8addb5df2bd3a559a3cc41b3f3"
-    authjwt_access_token_expires: int = 300  # 5 minutes
+    authjwt_access_token_expires: int = 60 * 60  # 60 minutes
     authjwt_refresh_token_expires: int = 604800  # 7 days
     
+
+class OrderModel(BaseModel):
+    id: Optional[int] = None
+    qty: int
+    order_status: Optional[str] = 'PENDING'
+    user_id: Optional[int] = None
+    product_id: Optional[int] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "qty": 2,
+            }
+        }
+
+class OrderStatus(BaseModel):
+    order_status: Optional[str] = 'PENDING'
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "order_status": "PENDING",
+            }
+        }
+
