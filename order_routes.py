@@ -35,7 +35,7 @@ async def make_order(order: OrderModel, Authorize: AuthJWT= Depends()):
     user = session.query(User).filter(User.username == current_user).first()
     new_order = Order(
         qty = order.qty,
-        # product = order.product_id,
+        product_id = order.product_id,
     )
     new_order.user = user
     session.add(new_order)
@@ -48,6 +48,12 @@ async def make_order(order: OrderModel, Authorize: AuthJWT= Depends()):
             'id': new_order.id,
             'qty': new_order.qty,
             'order_status': new_order.order_status,
+            'product': {
+                'id': new_order.product.id,
+                'name': new_order.product.name,
+                'price': new_order.product.price,
+            },
+            'total_price': new_order.qty * new_order.product.price
         }
     }
 
@@ -74,9 +80,14 @@ async def list_order(Authorize: AuthJWT= Depends()):
                     'is_staff': order.user.is_staff,
                     'is_active': order.user.is_active,
                 },
-                'product_id': order.product_id,
+                'product': {
+                    'id': order.product.id,
+                    'name': order.product.name,
+                    'price': order.product.price,
+                },
                 'quantity': order.qty,
-                'order_statuses': order.order_status.value
+                'order_statuses': order.order_status.value,
+                'total_price': order.qty * order.product.price,
 
             }
             for order in orders
@@ -110,10 +121,88 @@ async def get_order_by_id(id: int, Authorize: AuthJWT = Depends()):
                     'is_staff': order.user.is_staff,
                     'is_active': order.user.is_active,
                 },
-                'product_id': order.product_id,
+                'product': {
+                    'id': order.product_id,
+                    'name': order.product.name,
+                    'price': order.product.price,
+                },
                 'quantity': order.qty,
-                'order_statuses': order.order_status.value
+                'order_statuses': order.order_status.value,
+                'total_price': order.qty * order.product.price,
 
             }
         return jsonable_encoder(custom_order)
     raise HTTPException(detail=f'only Super Admin is allowed to this request', status_code=status.HTTP_403_FORBIDDEN)
+
+
+@order_router.delete('/{id}/', status_code=status.HTTP_200_OK)
+async def delete_order_by_id(id: int, Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(detail=f'Invalid token {str(e)}', status_code=status.HTTP_400_BAD_REQUEST)
+    user = Authorize.get_jwt_subject()
+    current_user = session.query(User).filter(User.username == user).first()
+    if current_user:
+        order = session.query(Order).filter(Order.id == id).first()
+        if order:
+            session.delete(order)
+            session.commit()
+            data = {
+                'sucess': True,
+                'code': 200,
+                'message': 'Order deleted successfully'
+            }
+            return jsonable_encoder(data)
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Order not found')
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Only Super Admin is allowed to delete orders')
+
+@order_router.put('/{id}/', status_code=status.HTTP_200_OK)
+async def update_order_by_id(id: int, update_order: OrderModel, Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(detail=f'Invalid token {str(e)}', status_code=status.HTTP_400_BAD_REQUEST)
+    user = Authorize.get_jwt_subject()
+    current_user = session.query(User).filter(User.username == user).first()
+    if current_user:
+        order = session.query(Order).filter(Order.id == id).first()
+        if order:
+            for key, value in update_order.dict(exclude_unset=True).items():
+                setattr(order, key, value)
+            session.commit()
+            data = {
+                'id': order.id,
+                'qty': order.qty,
+                'status': order.order_status.value
+            }
+            return jsonable_encoder(data)
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Order not found')
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Only Super Admin is allowed to update orders')
+
+
+@order_router.patch('/{id}/', status_code=status.HTTP_200_OK)
+async def patch_order_by_id(id: int, update_order: OrderModel, Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(detail=f'Invalid token {str(e)}', status_code=status.HTTP_400_BAD_REQUEST)
+    user = Authorize.get_jwt_subject()
+    current_user = session.query(User).filter(User.username == user).first()
+    if current_user:
+        order = session.query(Order).filter(Order.id == id).first()
+        if order:
+            for key, value in update_order.dict(exclude_unset=True).items():
+                setattr(order, key, value)
+            session.commit()
+            data = {
+                'id': order.id,
+                'qty': order.qty,
+                'order_status': order.order_status.value
+            }
+            return jsonable_encoder(data)
+        else:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Order not found')
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Only Super Admin is allowed to update orders')

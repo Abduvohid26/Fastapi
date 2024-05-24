@@ -37,7 +37,7 @@ class OrderModel(BaseModel):
     qty: int
     order_status: Optional[str] = 'PENDING'
     user_id: Optional[int] = None
-    product_id: Optional[int] = None
+    product_id: int
 
     class Config:
         json_schema_extra = {
