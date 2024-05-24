@@ -56,3 +56,17 @@ class OrderStatus(BaseModel):
             }
         }
 
+
+
+class ProductModel(BaseModel):
+    id: Optional[int] = None
+    name: str  
+    price: int
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "name": "test",
+                "price": 20000,
+            }
+        }
