@@ -4,6 +4,8 @@ from order_routes import order_router
 from product_routes import product_router
 from fastapi_jwt_auth import AuthJWT
 from schema import SettingsModel
+from os import getenv
+import uvicorn
 app = FastAPI()
 
 app.include_router(auth_router)
@@ -18,3 +20,6 @@ def get_config():
 async def home():
     return {"message": "Hello World"}
 
+
+if __name__ == '__main__':
+    uvicorn.run(app, host='0.0.0.0', port=int(getenv('PORT', 8000)))
