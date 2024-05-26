@@ -46,7 +46,7 @@ class OrderModel(BaseModel):
             }
         }
 
-class OrderStatus(BaseModel):
+class OrderStatusModel(BaseModel):
     order_status: Optional[str] = 'PENDING'
 
     class Config:
