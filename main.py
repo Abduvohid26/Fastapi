@@ -6,8 +6,16 @@ from fastapi_jwt_auth import AuthJWT
 from schema import SettingsModel
 from os import getenv
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
-
+orgins = ['*']
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=orgins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.include_router(auth_router)
 app.include_router(order_router)
 app.include_router(product_router)
